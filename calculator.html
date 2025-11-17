@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<title>ماشین حساب نئونی 3D</title>
+
+<style>
+body{
+    margin:0;
+    height:100vh;
+    background:#050515;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:sans-serif;
+    direction:rtl;
+    overflow:hidden;
+}
+
+/* فضای چرخش سه‌بعدی */
+.wrapper{
+    width:380px;
+    height:600px;
+    transform-style:preserve-3d;
+    perspective:1300px;
+    transition:transform .2s;
+    position:relative;
+    z-index:10;
+}
+
+/* بدنه اصلی */
+.calculator{
+    width:100%;
+    height:100%;
+    padding:25px;
+    border-radius:25px;
+    background:linear-gradient(135deg,#1a2aff,#ff0077);
+    box-shadow:
+        0 0 30px #ff008c,
+        0 0 60px #1a4fff inset;
+    animation:neon 3s infinite alternate;
+    transform-style:preserve-3d;      /* مهم */
+    position:relative;
+}
+
+@keyframes neon{
+    0%{ box-shadow:0 0 25px #ff007f, 0 0 45px #2a55ff inset; }
+    100%{ box-shadow:0 0 45px #ff00d4, 0 0 95px #437aff inset; }
+}
+
+/* نمایشگر */
+#display{
+    width:100%;
+    height:70px;
+    border:none;
+    padding:15px;
+    border-radius:15px;
+    font-size:32px;
+    color:#00eaff;
+    background:#0a0a1c;
+    box-shadow:inset 0 0 14px #00eaff, 0 0 18px #00c6ff;
+    margin-bottom:25px;
+}
+
+/* دکمه‌ها */
+.keys{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+}
+
+button{
+    height:70px;
+    border:none;
+    border-radius:14px;
+    font-size:26px;
+    cursor:pointer;
+    color:white;
+    background:linear-gradient(145deg,#ff2d92,#ff0055);
+    box-shadow:
+        0 0 16px rgba(255,0,150,.7),
+        inset 0 0 18px rgba(255,10,130,.4);
+    transition:.12s;
+    position:relative;
+    z-index:50; /* بسیار مهم برای تعامل */
+}
+
+button:active{
+    transform:scale(.88);
+}
+
+/* 0 دوتایی */
+.zero{
+    grid-column:span 2;
+}
+
+/* مساوی آبی */
+#equals{
+    background:linear-gradient(145deg,#00d9ff,#0066ff);
+    box-shadow:
+        0 0 20px #00d9ff,
+        inset 0 0 14px #0099ff;
+}
+
+</style>
+</head>
+<body>
+
+<div class="wrapper" id="wrap3d">
+    <div class="calculator">
+
+        <input id="display" value="0" readonly>
+
+        <div class="keys">
+            <button id="clear">C</button>
+            <button id="back">⌫</button>
+            <button class="op">%</button>
+            <button class="op">÷</button>
+
+            <button class="num">7</button>
+            <button class="num">8</button>
+            <button class="num">9</button>
+            <button class="op">×</button>
+
+            <button class="num">4</button>
+            <button class="num">5</button>
+            <button class="num">6</button>
+            <button class="op">−</button>
+
+            <button class="num">1</button>
+            <button class="num">2</button>
+            <button class="num">3</button>
+            <button class="op">+</button>
+
+            <button class="num zero">0</button>
+            <button class="num">.</button>
+            <button id="equals">=</button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+const display = document.getElementById("display");
+
+/* اعداد */
+document.querySelectorAll(".num").forEach(btn=>{
+    btn.onclick = ()=>{
+        if(display.value==="0") display.value = btn.textContent;
+        else display.value += btn.textContent;
+    };
+});
+
+/* عملیات */
+document.querySelectorAll(".op").forEach(btn=>{
+    btn.onclick = ()=>{
+        let op = btn.textContent.replace("÷","/").replace("×","*").replace("−","-");
+        display.value += op;
+    };
+});
+
+/* C */
+clear.onclick = ()=> display.value = "0";
+
+/* حذف آخر */
+back.onclick = ()=>{
+    display.value = display.value.slice(0,-1) || "0";
+};
+
+/* = */
+equals.onclick = ()=>{
+    try{
+        display.value = eval(display.value);
+    }catch{
+        display.value = "خطا";
+    }
+};
+
+/* ********** سه‌بعدی کامل ********** */
+document.addEventListener("mousemove", e=>{
+    let x = (window.innerWidth/2 - e.clientX)/12;
+    let y = (window.innerHeight/2 - e.clientY)/12;
+    wrap3d.style.transform = `rotateY(${x}deg) rotateX(${y}deg) rotateZ(${x/8}deg)`;
+});
+
+/* ژیروسکوپ موبایل */
+window.addEventListener("deviceorientation", e=>{
+    let x = e.gamma / 2;
+    let y = e.beta / 3;
+    wrap3d.style.transform = `rotateY(${x}deg) rotateX(${y}deg) rotateZ(${x/10}deg)`;
+});
+</script>
+
+</body>
+</html>

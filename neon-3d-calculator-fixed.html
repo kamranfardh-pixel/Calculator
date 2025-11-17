@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fa">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ماشین‌حساب 3D  تاریخچه + تبدیل ارز</title>
+
+<style>
+/* ------------------ رنگ‌ها و تنظیمات ------------------ */
+:root{
+  --bg:#070616;
+  --panel-a:#08122a;
+  --panel-b:#1b2b6b;
+  --accent1:#ff3e9d;
+  --accent2:#00eaff;
+  --glass: rgba(255,255,255,0.04);
+  --radius:20px;
+  --gap:14px;
+  font-family: "Vazirmatn", "Segoe UI", Roboto, sans-serif;
+  color: #e8f0ff;
+}
+
+html,body{height:100%; margin:0; background:var(--bg);}
+*{box-sizing:border-box}
+
+/* ------------------ مرکز ------------------ */
+.stage{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px;
+}
+
+/* قاب اصلی */
+.card {
+  width:380px;
+  max-width:96vw;
+  position:relative;
+}
+
+/* لایه‌های سه‌بعدی */
+.parallax {
+  position:absolute;
+  inset:0;
+  border-radius:var(--radius);
+  overflow:hidden;
+  pointer-events:none;
+  z-index:10;
+}
+.parallax .bg-glow{
+  position:absolute; inset:-20%;
+  background: radial-gradient(40% 40% at 20% 20%, rgba(0,230,255,0.06), transparent 15%),
+              radial-gradient(30% 30% at 80% 80%, rgba(255,60,150,0.05), transparent 10%);
+  transform:translate3d(0,0,0);
+  transition:transform .08s linear;
+  filter: blur(24px);
+}
+.parallax .panel-highlight{
+  position:absolute;
+  top:0; left:0; right:0; height:50%;
+  background: linear-gradient(120deg, rgba(255,255,255,0.03), rgba(255,255,255,0.00));
+  transform:translate3d(0,0,0);
+  transition:transform .08s linear;
+}
+
+/* ------------------ پوسته - قابل کلیک ------------------ */
+.shell {
+  position:relative;
+  border-radius:var(--radius);
+  padding:26px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+  box-shadow:0 18px 50px rgba(0,0,0,0.6);
+}
+
+/* نمایشگر نئونی */
+.display {
+  width:100%; height:76px;
+  border-radius:14px;
+  background: linear-gradient(180deg, #0c101a, #05070d);
+  color: var(--accent2);
+  font-weight:700;
+  font-size:28px;
+  padding:14px 18px;
+  border:none;
+}
+
+/* ------------------ دکمه‌ها ------------------ */
+.keys {
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:var(--gap);
+  margin-top:18px;
+}
+.btn{
+  height:68px;
+  border-radius:12px;
+  border:none;
+  font-size:20px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.1s;
+  color:#fff;
+}
+.btn:active{ transform:scale(.92); }
+
+/* رنگ‌ها */
+.btn.num {background:linear-gradient(180deg,#ff6aa6,#ff2d79);}
+.btn.op  {background:linear-gradient(180deg,#ffd66b,#ffae00); color:#2b0f00;}
+.btn.eq  {background:linear-gradient(180deg,#00d9ff,#0066ff);}
+.btn.ctrl{background:linear-gradient(180deg,#5253ff,#2b2dff);}
+.btn.zero{grid-column:span 2;}
+
+/* ------------------ تاریخچه ------------------ */
+.history-box {
+  margin-top:20px;
+  padding:14px;
+  height:150px;
+  overflow-y:auto;
+  background:rgba(255,255,255,0.06);
+  border-radius:14px;
+  font-size:16px;
+}
+.history-item {
+  margin:6px 0;
+  padding:6px;
+  background:rgba(0,0,0,0.25);
+  border-radius:8px;
+}
+
+/* ------------------ تبدیل ارز ------------------ */
+.currency-box{
+  margin-top:20px;
+  padding:14px;
+  background:rgba(255,255,255,0.06);
+  border-radius:14px;
+}
+select,input.currency-input{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:8px;
+  border:none;
+  font-size:16px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- صدای کلیک -->
+<audio id="clickSound" src="https://assets.mixkit.co/active_storage/sfx/2562/2562-preview.mp3" preload="auto"></audio>
+
+<div class="stage">
+  <div class="card" id="cardRoot">
+
+    <!-- پارالاکس -->
+    <div class="parallax">
+      <div class="bg-glow" id="bgGlow"></div>
+      <div class="panel-highlight" id="panelHL"></div>
+    </div>
+
+    <!-- بدنه -->
+    <div class="shell">
+      <input class="display" id="display" value="0" readonly>
+
+      <div class="keys" id="keys">
+        <button class="btn ctrl" id="clear">C</button>
+        <button class="btn ctrl" id="back">⌫</button>
+        <button class="btn op" data-op="%">%</button>
+        <button class="btn op" data-op="÷">÷</button>
+
+        <button class="btn num" data-num="7">7</button>
+        <button class="btn num" data-num="8">8</button>
+        <button class="btn num" data-num="9">9</button>
+        <button class="btn op" data-op="×">×</button>
+
+        <button class="btn num" data-num="4">4</button>
+        <button class="btn num" data-num="5">5</button>
+        <button class="btn num" data-num="6">6</button>
+        <button class="btn op" data-op="−">−</button>
+
+        <button class="btn num" data-num="1">1</button>
+        <button class="btn num" data-num="2">2</button>
+        <button class="btn num" data-num="3">3</button>
+        <button class="btn op" data-op="+">+</button>
+
+        <button class="btn num zero" data-num="0">0</button>
+        <button class="btn num" data-num=".">.</button>
+        <button class="btn eq" id="equals">=</button>
+      </div>
+
+      <!-- تاریخچه -->
+      <div class="history-box" id="history"></div>
+
+      <!-- تبدیل ارز -->
+      <div class="currency-box">
+        <h3>تبدیل ارز</h3>
+        <select id="currencyType">
+          <option value="usd">دلار → تومان</option>
+          <option value="eur">یورو → تومان</option>
+          <option value="aed">درهم → تومان</option>
+        </select>
+
+        <input class="currency-input" id="currencyInput" placeholder="مبلغ را وارد کن">
+
+        <button class="btn eq" style="margin-top:10px" id="convertBtn">تبدیل</button>
+
+        <div style="margin-top:10px;font-size:18px" id="currencyResult"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ------------------ صدا ------------------ */
+function playClick(){
+  const s = document.getElementById("clickSound");
+  s.currentTime = 0;
+  s.play();
+}
+
+/* ------------------ نمایشگر ------------------ */
+const display = document.getElementById("display");
+const historyBox = document.getElementById("history");
+
+function addHistory(text){
+  const div = document.createElement("div");
+  div.className = "history-item";
+  div.textContent = text;
+  historyBox.prepend(div);
+}
+
+function sanitize(expr){
+  return expr
+    .replace(/×/g,'*')
+    .replace(/÷/g,'/')
+    .replace(/−/g,'-')
+    .replace(/[^0-9+\-*/().%]/g,'');
+}
+
+function safeEval(expr){
+  expr = sanitize(expr);
+
+  expr = expr.replace(/(\d+)%/g, "($1/100)");
+
+  try{
+    let r = new Function("return " + expr)();
+    if(r === Infinity || isNaN(r)) return "خطا";
+    return r.toString();
+  }catch(e){
+    return "خطا";
+  }
+}
+
+/* ------------------ کلیک دکمه‌ها ------------------ */
+document.getElementById("keys").addEventListener("click", e=>{
+  const btn = e.target.closest("button");
+  if(!btn) return;
+  playClick();
+
+  if(btn.classList.contains("num")){
+    if(display.value === "0") display.value = btn.dataset.num;
+    else display.value += btn.dataset.num;
+    return;
+  }
+
+  if(btn.classList.contains("op")){
+    let op = btn.dataset.op;
+    display.value += op;
+    return;
+  }
+
+  if(btn.id === "clear"){
+    display.value = "0";
+    return;
+  }
+
+  if(btn.id === "back"){
+    display.value = display.value.slice(0,-1) || "0";
+    return;
+  }
+
+  if(btn.id === "equals"){
+    let result = safeEval(display.value);
+    addHistory(display.value + " = " + result);
+    display.value = result;
+  }
+});
+
+/* ------------------ تبدیل ارز ------------------ */
+document.getElementById("convertBtn").addEventListener("click", ()=>{
+  playClick();
+
+  const type = document.getElementById("currencyType").value;
+  const amount = Number(document.getElementById("currencyInput").value);
+  const out = document.getElementById("currencyResult");
+
+  if(isNaN(amount)){
+    out.textContent = "ورودی معتبر نیست";
+    return;
+  }
+
+  const rates = {
+    usd: 60000,
+    eur: 65000,
+    aed: 17000
+  };
+
+  const result = amount * rates[type];
+  out.textContent = result.toLocaleString() + " تومان";
+});
+
+/* ------------------ پارالاکس ------------------ */
+const bgGlow = document.getElementById("bgGlow");
+const panelHL = document.getElementById("panelHL");
+const card = document.getElementById("cardRoot");
+
+let mx=0,my=0,px=0,py=0;
+function loop(){
+  px += (mx-px)*0.1;
+  py += (my-py)*0.1;
+
+  bgGlow.style.transform = `translate(${px*0.3}px, ${py*0.2}px)`;
+  panelHL.style.transform = `translate(${px*0.6}px, ${py*0.4}px)`;
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+document.addEventListener("mousemove", e=>{
+  const r = card.getBoundingClientRect();
+  mx = e.clientX - (r.left + r.width/2);
+  my = e.clientY - (r.top + r.height/2);
+});
+</script>
+</body>
+</html>

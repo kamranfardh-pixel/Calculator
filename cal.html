@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fa">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ماشین‌حساب کامل</title>
+<style>
+:root{
+  --bg: #eef2f6;
+  --panel: #fff;
+  --primary: #0b74de;
+  --muted: #7b8a99;
+  --shadow: rgba(14,30,37,0.08);
+  --radius: 14px;
+  --gap: 10px;
+  font-family: "Vazirmatn", sans-serif;
+}
+body{
+  margin:0; display:flex; align-items:center; justify-content:center;
+  height:100vh; background: var(--bg); direction: rtl;
+}
+.calculator{
+  width: 360px; padding: 18px;
+  background: var(--panel); border-radius: var(--radius);
+  box-shadow: 0 8px 24px var(--shadow); display:grid; grid-template-rows:auto 1fr; gap:14px;
+}
+.display-wrap{
+  background:#f5f7fa; border-radius:12px; padding:12px;
+}
+.display{
+  width:100%; border:none; background:transparent;
+  font-size:1.6rem; font-weight:700; padding:6px 10px; text-align:left;
+  color:#07203a; direction:ltr;
+}
+.display[readonly]{caret-color:transparent}
+.keys{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); margin-top:14px;
+}
+button.key{
+  height:58px; border-radius:10px; border:none;
+  font-size:1.05rem; font-weight:600; background:#fff;
+  box-shadow:0 6px 14px rgba(2,6,23,0.06); cursor:pointer; user-select:none;
+}
+button.op{color:var(--primary);}
+button.equal{background:var(--primary); color:#fff;}
+button.control{color:#b13b3b;}
+.key-zero{grid-column:span 2;}
+button.key:active{transform:translateY(2px) scale(.998);}
+</style>
+</head>
+<body>
+<div class="calculator">
+  <!-- نمایشگر -->
+  <div class="display-wrap">
+    <input type="text" id="display" class="display" value="0" readonly>
+  </div>
+
+  <!-- دکمه‌ها -->
+  <div class="keys">
+    <button class="key control" id="clear">C</button>
+    <button class="key control" id="back">⌫</button>
+    <button class="key op" id="percent">%</button>
+    <button class="key op" id="divide">÷</button>
+
+    <button class="key" id="seven">7</button>
+    <button class="key" id="eight">8</button>
+    <button class="key" id="nine">9</button>
+    <button class="key op" id="multiply">×</button>
+
+    <button class="key" id="four">4</button>
+    <button class="key" id="five">5</button>
+    <button class="key" id="six">6</button>
+    <button class="key op" id="minus">−</button>
+
+    <button class="key" id="one">1</button>
+    <button class="key" id="two">2</button>
+    <button class="key" id="three">3</button>
+    <button class="key op" id="plus">+</button>
+
+    <button class="key key-zero" id="zero">0</button>
+    <button class="key" id="dot">.</button>
+    <button class="key equal" id="equals">=</button>
+  </div>
+</div>
+
+<script>
+const display = document.getElementById("display");
+const keys = document.querySelectorAll(".key");
+
+// تابع برای اضافه کردن عدد یا عملیات به نمایشگر
+keys.forEach(key => {
+  key.addEventListener("click", () => {
+    const keyValue = key.textContent;
+    
+    if(key.id === "clear"){
+      display.value = "0"; // پاک کردن همه
+    }
+    else if(key.id === "back"){
+      display.value = display.value.slice(0,-1) || "0"; // حذف آخرین کاراکتر
+    }
+    else if(key.id === "equals"){
+      try {
+        // جایگزینی عملیات بصورت قابل اجرا در JS
+        let expression = display.value.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-").replace(/%/g, "/100");
+        display.value = eval(expression);
+      } catch(e){
+        display.value = "خطا";
+      }
+    }
+    else {
+      // اگر نمایشگر "0" باشد و عدد وارد شود جایگزین شود
+      if(display.value === "0" && !isNaN(keyValue)){
+        display.value = keyValue;
+      } else {
+        display.value += keyValue;
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>
